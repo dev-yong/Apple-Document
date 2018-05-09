@@ -267,4 +267,104 @@
   }
   ```
 
-  ​
+- ### *Performing Time-Based Operations (쉽게 지나치는 부분. 자세히 보자!)*
+
+  미디어 재생은 시간 기반의 작업(**Time-Based**)입니다.
+
+  AVFoundation의 일부를 포함한 여러 Apple 프레임워크는 부동소수점 **NSTimeInterval 값으로 시간을 표현**합니다. 자연스러운 사고방식과 시간을 표시하는 방법을 제공하지만 시간에 맞는 미디어 작업에 대해선 문제가 됩니다. **부동소수점의 부정확성은 timing drift를 초래**할 수 있습니다. 이를 해결하기 위하여, AVFoundation은 **`CMTime`** 데이터 타입을 이용하여 시간을 나타냅니다.
+
+  **CMTime** : Defines a structure that represents a rational time value `int64`/`int32`.
+
+  ```swift
+  public struct CMTime {
+      public var value: CMTimeValue //분수 시간의 분자를 정의하는 64비트 정수
+      public var timescale: CMTimeScale //분모를 정의하는 32비트 정수
+      public var flags: CMTimeFlags
+      public var epoch: CMTimeEpoch
+  }
+  ```
+
+  > CMTimeGetSeconds VS CMTime.second
+
+  ```swift
+  // 0.25 seconds
+  let quarterSecond = CMTime(value: 1, timescale: 4)
+   
+  // 10 second mark in a 44.1 kHz audio file
+  let tenSeconds = CMTime(value: 441000, timescale: 44100)
+   
+  // 3 seconds into a 30fps video
+  let cursor = CMTime(value: 90, timescale: 30)
+  ```
+
+  - #### Observing Time
+
+    재생위치를 업데이트하거나 사용자 인터페이스 상태를 동기화할 수 있도록 재생 시간을 관찰합니다. 
+
+    **KVO는 연속적 상태변화에는 적합하지 않습니다**. 대신, AVPlayer는 2가지의 플레이 시간 변화(periodic observation , boundary observation)를 관찰하는 방법을 제공합니다.
+
+    - **Periodic Observations** : **일정한 주기**로 움직이는 것을 관찰할 수 있습니다. 
+      주기적인 타이밍을 관찰하기 위해서는 player의 `addPeriodicTimeObserverForInterval:queue:usingBlock:`  를 이용합니다.
+
+      ```swift
+      var player: AVPlayer!
+      var playerItem: AVPlayerItem!
+      var timeObserverToken: Any?
+       
+      func addPeriodicTimeObserver() {
+          // Notify every half second
+          let timeScale = CMTimeScale(NSEC_PER_SEC)
+          let time = CMTime(seconds: 0.5, preferredTimescale: timeScale)
+          timeObserverToken = player.addPeriodicTimeObserver(forInterval: time,
+                                                             queue: .main) {
+              [weak self] time in
+              // update player transport UI
+          }
+      }
+       
+      func removePeriodicTimeObserver() {
+          if let timeObserverToken = timeObserverToken {
+              player.removeTimeObserver(timeObserverToken)
+              self.timeObserverToken = nil
+          }
+      }
+      ```
+
+
+    - **Boundary Observations** : 미디어의 타임라인에 관심 지점을 정의할 수 있으며, 일반 재생 중 시간이 경과하면 다시 호출합니다. 재생 컨트롤이 없는 비디오를 표시하고 화면 요소를 동기화 시키거나 추가 콘텐츠를 표시하는 경우 사용할 수 있습니다.
+
+      `addBoundaryTimeObserverForTimes:queue:usingBlock:`를 사용할 수 있습니다.
+
+      ```swift
+      var asset: AVAsset!
+      var player: AVPlayer!
+      var playerItem: AVPlayerItem!
+      var timeObserverToken: Any?
+       
+      func addBoundaryTimeObserver() {
+          // Divide the asset's duration into quarters.
+          let interval = CMTimeMultiplyByFloat64(asset.duration, 0.25)
+          var currentTime = kCMTimeZero
+          var times = [NSValue]()
+       
+          // Calculate boundary times
+          while currentTime < asset.duration {
+              currentTime = currentTime + interval
+              times.append(NSValue(time:currentTime))
+          }
+       
+          timeObserverToken = player.addBoundaryTimeObserver(forTimes: times,
+                                                             queue: .main) {
+              // Update UI
+          }
+      }
+       
+      func removeBoundaryTimeObserver() {
+          if let timeObserverToken = timeObserverToken {
+              player.removeTimeObserver(timeObserverToken)
+              self.timeObserverToken = nil
+          }
+      }
+      ```
+
+      ​
