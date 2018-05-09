@@ -133,7 +133,7 @@
 
   미디어를 재생하는 데 필요한 추가 객체들에 대해 설명하고 재생을 위해 그것들을 구성하는 방법에 대하여 보여 줍니다
 
-  ![image-20180509085808899](/var/folders/q5/jd37stc93wnbg03qc25l_yc00000gp/T/abnerworks.Typora/image-20180509085808899.png)
+  ![image-20180509085808899](https://ws1.sinaimg.cn/large/006tKfTcgy1fr4yn1rb44j30eg0a60t7.jpg)
 
   - #### AVPlayer 
 
