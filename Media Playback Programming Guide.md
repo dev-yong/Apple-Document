@@ -367,4 +367,24 @@
       }
       ```
 
-      ​
+  - #### Seeking Media
+
+    AVPlayer및 AVPlayerItem의 메소드를 사용하여 다양한 방법으로 탐색할 수 있습니다. 가장 일반적인 방법은 플레이어의 `seekToTime:` 를 사용하여 다음과 같이 대상 CMTime값을 전달하는 것입니다.
+
+    `seekToTime:`는 정확성보다는 속도에 맞게 조정되어집니다. 실제 시간이 요청한 시간과 다를 수도 있습니다.
+
+    정확한 탐색이 필요한 경우 `seekToTime:toleranceBefore:toleranceAfter: `를 사용하여 타겟 타임의 허용편차를 나타냅니다. 참고로, 오차가 작거나 제로인 메서드를 호출하면 추가 디코딩 지연이 발생하여 앱 검색 동작에 영향을 줄 수 있습니다.
+
+    ```swift
+    // Seek to the 2 minute mark
+    let time = CMTime(value: 120, timescale: 1)
+    player.seek(to: time)
+    ```
+
+    ```swift
+    // Seek to the first frame at 3:25 mark
+    let seekTime = CMTime(seconds: 205, preferredTimescale: Int32(NSEC_PER_SEC))
+    player.seek(to: seekTime, toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
+    ```
+
+    ​
