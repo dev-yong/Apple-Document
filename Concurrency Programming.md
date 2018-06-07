@@ -1,6 +1,4 @@
-# Concurrent Programming With GCD in Swift 3
-
-> https://developer.apple.com/videos/play/wwdc2016/720/
+# [Concurrent Programming With GCD in Swift 3](https://developer.apple.com/videos/play/wwdc2016/720/)
 
 - ### **Main Thread**에서 User Interface의 모든 코드를 실행한다. 
 
@@ -25,7 +23,9 @@
 
       - Dispatch가 thread와 service가져온다.
 
-      - Queue에 제출된 순서 = Dispatch에서 실행되는 순서 (Dispatch Queues excute FIFO)
+      - Queue에 제출된 순서 = Dispatch에서 실행되는 순서 (**Dispatch Queues excute <u>FIFO</u>**)
+
+      - Serial dispatch queues는 한번에 하나의 작업만 실행하며 해당 task가 완료될 때 까지 기다린 후, 새 task를 시작합니다. 반대로 concurrent dispatch queues는 이미 시작된 작업이 완료될 때 까지 기다리지 않고, 가능한 많은 작업을 시작합니다.
 
       - submit work : asyncronous, syncronous
 
@@ -92,11 +92,9 @@
 
 
 
-# Concurrency Programming Guide
+# [Concurrency Programming Guide](https://developer.apple.com/library/archive/documentation/General/Conceptual/ConcurrencyProgrammingGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40008091-CH1-SW1)
 
-> https://developer.apple.com/library/archive/documentation/General/Conceptual/ConcurrencyProgrammingGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40008091-CH1-SW1
-
-- The term ***thread*** is used to refer to a separate path of execution for code. 
+- The term ***thread*** is used to refer to a separate path of execution or code. 
   코드 실행을 위한 <u>별도의 실행 경로</u>
 - The term ***process*** is used to refer to a running executable, which can encompass multiple threads.
   여러 thread를 포함할 수 있는, 실행 파일(<u>running executable</u>)
@@ -106,3 +104,268 @@
 
 
 > https://www.appcoda.com/grand-central-dispatch/
+
+## [Grand Central Dispatch Tutorial for Swift 3: Part 1/2](https://www.raywenderlich.com/148513/grand-central-dispatch-tutorial-swift-3-part-1)
+
+- **Parallelism** vs **Concurrency**
+
+#### ![grand central dispatch tutorial](https://koenig-media.raywenderlich.com/uploads/2014/01/Concurrency_vs_Parallelism.png)
+
+- GCD는 DispatchQueue을 제공하여 제출 한 작업을 **FIFO 순서로 실행하고 관리**함
+
+- DispatchQueue는 **thread-safe**하다. 
+
+- Queue의 종류
+
+  - ##### Serial(직렬)
+
+    - 주어진 시간에 **하나의 작업**만 실행
+
+    ![grand central dispatch tutorial](https://koenig-media.raywenderlich.com/uploads/2014/09/Serial-Queue-Swift-480x272.png)
+
+    ```swift
+    let serialQueue = DispatchQueue(label: "com.example.serial")
+    serialQueue.async {
+        for i in 0..<10 {
+            print("🍏", i)
+        }
+    }
+    serialQueue.async {
+        for i in 100..<110 {
+            print("🍎", i)
+        }
+    }
+    🍏 0
+    🍏 1
+    🍏 2
+    🍏 3
+    🍏 4
+    🍏 5
+    🍏 6
+    🍏 7
+    🍏 8
+    🍏 9
+    🍎 100
+    🍎 101
+    🍎 102
+    🍎 103
+    🍎 104
+    🍎 105
+    🍎 106
+    🍎 107
+    🍎 108
+    🍎 109
+    ```
+
+  - ##### Concurrent(병렬)
+
+    - 여러 작업을 **동시에 실행**한다. 
+    - 추가된 **순서대로 시작**되도록 보장된다. (**FIFO**)
+
+    ![grand central dispatch tutorial](https://koenig-media.raywenderlich.com/uploads/2014/09/Concurrent-Queue-Swift-480x272.png)
+
+    ```swift
+    let conCurrentQueue = DispatchQueue(label: "com.example.concurrent", attributes: .concurrent)
+    conCurrentQueue.async {
+        for i in 0..<10 {
+            print("🍏", i)
+        }
+    }
+    conCurrentQueue.async {
+        for i in 100..<110 {
+            print("🍎", i)
+        }
+    }
+    🍏 0
+    🍎 100
+    🍏 1
+    🍎 101
+    🍏 2
+    🍎 102
+    🍏 3
+    🍎 103
+    🍏 4
+    🍎 104
+    🍏 5
+    🍎 105
+    🍏 6
+    🍎 106
+    🍏 7
+    🍎 107
+    🍏 8
+    🍎 108
+    🍏 9
+    🍎 109
+    ```
+
+  ```swift
+  let serialQueue = DispatchQueue(label: "com.example.serial")
+  let conCurrentQueue = DispatchQueue(label: "com.example.concurrent", attributes: .concurrent)
+  ```
+
+  ​	
+
+- DispatchQueue의 주요 타입
+
+  - **Main Queue** : **Serial Queue**, **Main thread**에서 실행, 모든 UI 처리, 높은 우선 순위를 갖고 있다.
+  - **Global queue** : **Concurrent Queue**, 전체 시스템에서 공유한다.
+  - **Custom Queue** : Serial or Concurrent Queue. Global Queue 중 하나에 의하여 처리된다.
+
+- **Syncronous** vs **Asyncronous**
+
+  ```swift
+  let serialQueue = DispatchQueue(label: "com.example.serial")
+  serialQueue.sync {
+      for i in 0..<10 {
+          print("🍏", i)
+      }
+  }
+  for i in 100..<110 {
+      print("🍎", i)
+  }
+  🍏 0
+  🍏 1
+  🍏 2
+  🍏 3
+  🍏 4
+  🍏 5
+  🍏 6
+  🍏 7
+  🍏 8
+  🍏 9
+  🍎 100
+  🍎 101
+  🍎 102
+  🍎 103
+  🍎 104
+  🍎 105
+  🍎 106
+  🍎 107
+  🍎 108
+  🍎 109
+  ```
+
+  ```swift
+  serialQueue.async {
+      for i in 0..<10 {
+          print("🍏", i)
+      }
+  }
+  for i in 100..<110 {
+      print("🍎", i)
+  }
+  🍎 100
+  🍏 0
+  🍎 101
+  🍏 1
+  🍎 102
+  🍏 2
+  🍎 103
+  🍎 104
+  🍎 105
+  🍏 3
+  🍎 106
+  🍎 107
+  🍎 108
+  🍏 4
+  🍎 109
+  🍏 5
+  🍏 6
+  🍏 7
+  🍏 8
+  🍏 9
+  ```
+
+- 직접 우선순위를 지정하지 않고, **`DispatchQoS.QoSClass`로 지정**합니다.
+
+  ```swift
+  let globalQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.userInteractive)
+  ```
+
+  - `.userInteractive` :  UI 업데이트, 이벤트 처리 및 대기 시간이 적은 작업. **Main Thread에서 실행**되어야 한다. 
+
+  - `.userInitiated`  : 사용자가 즉각적인 결과를 기다리고 있고 UI 상호 작용을 계속하는 데 필요한 작업에 사용.
+
+    mapped into the high priority global queue.
+
+  - `.default` 
+
+  - `.utility` : 계산, I/O, 네트워킹, 연속적인 데이터 피드 등 지속적인 작업이 필요한 경우에 사용
+    mapped into the low priority global queue.
+
+  - `.background` : 시간에 민감하지 않은 작업들
+    mapped into the background priority global queue
+
+  - `.unspecified `
+
+    ```swift
+    let serialQueue1 = DispatchQueue(label: "com.example.serial1", qos: .userInteractive)
+    let serialQueue2 = DispatchQueue(label: "com.example.serial2", qos: .userInteractive)
+    serialQueue1.async {
+        for i in 0..<10 {
+            print("🍏", i)
+        }
+    }
+    serialQueue2.async {
+        for i in 100..<110 {
+            print("🍎", i)
+        }
+    }
+    🍎 100
+    🍏 0
+    🍎 101
+    🍏 1
+    🍎 102
+    🍏 2
+    🍎 103
+    🍏 3
+    🍎 104
+    🍏 4
+    🍎 105
+    🍏 5
+    🍎 106
+    🍏 6
+    🍎 107
+    🍏 7
+    🍎 108
+    🍏 8
+    🍎 109
+    🍏 9
+    ```
+
+    ```swift
+    let serialQueue1 = DispatchQueue(label: "com.example.serial1", qos: .background)
+    let serialQueue2 = DispatchQueue(label: "com.example.serial2", qos: .userInteractive)
+    serialQueue1.async {
+        for i in 0..<10 {
+            print("🍏", i)
+        }
+    }
+    serialQueue2.async {
+        for i in 100..<110 {
+            print("🍎", i)
+        }
+    }
+    🍏 0
+    🍎 100
+    🍎 101
+    🍎 102
+    🍎 103
+    🍎 104
+    🍎 105
+    🍎 106
+    🍏 1
+    🍎 107
+    🍏 2
+    🍎 108
+    🍎 109
+    🍏 3
+    🍏 4
+    🍏 5
+    🍏 6
+    🍏 7
+    🍏 8
+    🍏 9
+    ```
+
+- **DispatchWorkItem** : DispatchQueue에 제출하는 작업을 캡슐화한 것
